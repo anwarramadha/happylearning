@@ -56,7 +56,8 @@ public class Nilai implements Serializable {
             for (int l = 0; l < inst.numInstances(); l++) { //jumlah seluruh instances
                 double val = inst.get(l).value(i);
                 if (countClass <= numClass[k]) {
-                    if (inst.attribute(classindex).value(k).equalsIgnoreCase(inst.get(l).toString(classindex))) {/*nama kelasnya*/
+                    if (inst.attribute(classindex).value(k).
+                            equalsIgnoreCase(inst.get(l).toString(classindex).replaceAll("'", ""))) {/*nama kelasnya*/
                         if (val >= lower && val < upper) {//jika ada nilai yang sama pada atribut 
                             //dan kelas yang sama dan nilai dari atribut lebih besar sama dengan lower
                             cnt+=1;
@@ -80,7 +81,7 @@ public class Nilai implements Serializable {
     
     public double getFrekuensiNilai (String attrName) {
         for (Kelas valKelas : kelas) {
-            if (valKelas.getName().equalsIgnoreCase(attrName)) {
+            if (valKelas.getName().equalsIgnoreCase(attrName.replaceAll("'", ""))) {
                 return valKelas.getFrekuensi();
             }
         }

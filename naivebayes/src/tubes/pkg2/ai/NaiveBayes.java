@@ -16,13 +16,11 @@ import java.util.Scanner;
 import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
-import weka.core.Debug;
 import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
-import weka.filters.unsupervised.attribute.Discretize;
 import weka.filters.unsupervised.attribute.NumericToNominal;
 /**
  *
@@ -80,7 +78,7 @@ public class NaiveBayes extends AbstractClassifier{
         System.out.print("Masukkan pilihan : ");
         Scanner sc = new Scanner(System.in);
         int pil = sc.nextInt();
-        DataSource source = new DataSource(("D:\\Program Files\\Weka-3-8\\data\\ionosphere.arff"));
+        DataSource source = new DataSource(("D:\\Program Files\\Weka-3-8\\data\\iris.arff"));
         Instances train = source.getDataSet();
         train.setClassIndex(train.numAttributes() - 1);
         NaiveBayes tb = new NaiveBayes();
@@ -92,10 +90,11 @@ public class NaiveBayes extends AbstractClassifier{
                 tb.toSummaryString();
                 eval.crossValidateModel(tb, train ,10, new Random(1));
                 System.out.println(eval.toSummaryString());
+                saveModel(tb);
                 break;
             default :
                 tb = loadModel();
-                
+                tb.toSummaryString();
                 eval.crossValidateModel(tb, train ,10, new Random(1));
                 System.out.println(eval.toSummaryString());
         }
@@ -171,7 +170,7 @@ public class NaiveBayes extends AbstractClassifier{
             int cnt=0;
             for(int j = 0; j<ins.numInstances();j++) {
                 if (ins.attribute(ins.classIndex()).value(i).equals
-                    (ins.get(j).toString(ins.classIndex()))) cnt++;
+                    (ins.get(j).toString(ins.classIndex()).replaceAll("'", ""))) cnt++;
             }
             countEachClass[i] = cnt;
         }
