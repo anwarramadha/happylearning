@@ -18,11 +18,9 @@ public class Kelas implements Serializable {
     private final String name;
     private int index;
     private final double frekuensi;
-    private final double numClass;
-    public Kelas(String str, double i, double num) {
+    public Kelas(String str, double i) {
         name = str;
         frekuensi = i;
-        numClass = num;
     }
     
     public String getName() {
@@ -35,9 +33,5 @@ public class Kelas implements Serializable {
     
     public double getFrekuensi() {
         return frekuensi;
-    }
-    
-    public double getNum() {
-        return numClass;
     }
 }

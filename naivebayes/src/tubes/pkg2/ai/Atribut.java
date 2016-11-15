@@ -8,6 +8,8 @@ package tubes.pkg2.ai;
 import java.io.Serializable;
 import java.util.ArrayList;
 import weka.core.Instances;
+import weka.filters.Filter;
+import weka.filters.unsupervised.attribute.Discretize;
 
 /**
  *
@@ -15,40 +17,34 @@ import weka.core.Instances;
  */
 public class Atribut implements Serializable {
     private final String name;
-    private final int index;
-    private final int num;
     private final ArrayList<Nilai> listNilai;
-    public Atribut(Instances ints, int i, int classindex) {
+    public Atribut(Instances ints, int i, int classindex) throws Exception {
+        Instances newData = new Instances(ints);
+        Discretize f = new Discretize();
+        f.setInputFormat(newData);
+        newData = Filter.useFilter(newData, f);
         name = ints.attribute(i).name();
-        index = ints.attribute(i).index();
-        num = ints.attribute(i).numValues();
         listNilai = new ArrayList<>();
-        for (int j = 0; j < ints.attribute(i).numValues(); j++) {
+        for (int j = 0; j < newData.attribute(i).numValues(); j++) {
             listNilai.add(new Nilai(ints, i, j, classindex));
         }
     }
     
+    
     public String getName() {
         return name;
-    }
-    
-    public int getIndex() {
-        return index;
     }
     
     public ArrayList<Nilai> getListAtribut() {
         return listNilai;
     }
    
-    public int getNumValues() {
-        return num;
-    }
-    
-    public double getFrekuensiNilai(String attrName, String className) {
+    public double getFrekuensiNilai(String nama, String className, double val) {
         for (Nilai valNilai : listNilai) {
-            //System.out.println(attrName);
-            if (valNilai.getName().equalsIgnoreCase(attrName)) {
-                return valNilai.getFrekuensiNilai(className);
+            if (nama.equalsIgnoreCase(name)) {
+                if (val >= valNilai.getLower() && val < valNilai.getUpper()){
+                    return valNilai.getFrekuensiNilai(className);
+                }
             }
         }
         return 1;

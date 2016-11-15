@@ -7,9 +7,10 @@ package tubes.pkg2.ai;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.jar.Attributes;
-import weka.core.Attribute;
+import java.util.Arrays;
 import weka.core.Instances;
+import weka.filters.Filter;
+import weka.filters.unsupervised.attribute.Discretize;
 
 /**
  *
@@ -17,28 +18,55 @@ import weka.core.Instances;
  */
 public class Nilai implements Serializable {
     private final String name;
-    private final int index;
+    private final double lower;
+    private final double upper;
     private final ArrayList<Kelas> kelas;
-    private double numEachClass;
-    public Nilai (Instances inst, int i, int j, int classindex) {
-        name = inst.attribute(i).value(j);
+    private final int [] numClass;
+    public Nilai (Instances inst, int i, int j, int classindex) throws Exception {
+        Instances newData = new Instances(inst);
+        numClass = NaiveBayes.getNumEachClass(newData);
+        Discretize f = new Discretize();
+        f.setInputFormat(newData);
+        newData = Filter.useFilter(newData, f);
+        name = newData.attribute(i).value(j);
         kelas = new ArrayList<>();
-        index = 0;
-        for (int k = 0; k < inst.attribute(classindex).numValues(); k++) { //buat nama kelas size = 3
-            double cnt = 1;
-            double cntClass = 0;
-            for(int m = 0; m < inst.instance(i).numValues(); m++) { //buat akses elemen baris ke-m size = 5
-                for (int l = 0; l < inst.numInstances(); l++) { //jumlah seluruh instances
-                    if (inst.attribute(classindex).value(k).equalsIgnoreCase(inst.get(l).toString(classindex)) && m == i) cntClass += 1;
-                    if (inst.attribute(i).value(j).equalsIgnoreCase(inst.get(l).toString(m)) && 
-                            inst.attribute(classindex).value(k).equalsIgnoreCase(inst.get(l).toString(classindex)) && m == i) {//jika ada nilai yang sama pada atribut 
-                            //dan kelas yang sama
-                        cnt+=1;
-                    }
+        if (f.getCutPoints(i)!=null) {
+            if (j == 0) {
+                lower = Double.NEGATIVE_INFINITY;
+                upper = f.getCutPoints(i)[j];
+            }
+            else {
+                if (j != newData.attribute(0).numValues()-1) {
+                    lower = f.getCutPoints(i)[j-1];
+                    upper = f.getCutPoints(i)[j];
+                }
+                else {
+                    lower = f.getCutPoints(i)[j-1];
+                    upper = Double.POSITIVE_INFINITY;
                 }
             }
-            numEachClass = cntClass;
-            kelas.add(new Kelas(inst.attribute(classindex).value(k),cnt, cntClass));
+        }else 
+        {
+            lower = Double.NEGATIVE_INFINITY;
+            upper = Double.POSITIVE_INFINITY;
+        }
+        for (int k = 0; k < inst.attribute(classindex).numValues(); k++) { //buat nama kelas
+            double cnt = 1;
+            int countClass = 0;
+            for (int l = 0; l < inst.numInstances(); l++) { //jumlah seluruh instances
+                double val = inst.get(l).value(i);
+                if (countClass <= numClass[k]) {
+                    if (inst.attribute(classindex).value(k).equalsIgnoreCase(inst.get(l).toString(classindex))) {/*nama kelasnya*/
+                        if (val >= lower && val < upper) {//jika ada nilai yang sama pada atribut 
+                            //dan kelas yang sama dan nilai dari atribut lebih besar sama dengan lower
+                            cnt+=1;
+                        }
+                        countClass++;
+                    }
+                }
+                else break;
+            }
+            kelas.add(new Kelas(newData.attribute(classindex).value(k),cnt));
         }
     }
     
@@ -59,7 +87,11 @@ public class Nilai implements Serializable {
         return 1;
     }
     
-    public double getNumClass() {
-        return numEachClass;
+    public double getLower() {
+        return lower;
+    }
+    
+    public double getUpper() {
+        return upper;
     }
 }

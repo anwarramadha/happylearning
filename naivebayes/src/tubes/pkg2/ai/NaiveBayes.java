@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
 import weka.classifiers.AbstractClassifier;
@@ -30,6 +31,7 @@ import weka.filters.unsupervised.attribute.NumericToNominal;
 public class NaiveBayes extends AbstractClassifier{
     private Instances datatrain;
     private final ArrayList<Atribut> listAtribut;
+    private int[] numEachClass;
     
     public NaiveBayes () throws Exception {
         listAtribut = new ArrayList<>();
@@ -78,34 +80,22 @@ public class NaiveBayes extends AbstractClassifier{
         System.out.print("Masukkan pilihan : ");
         Scanner sc = new Scanner(System.in);
         int pil = sc.nextInt();
-        DataSource source = new DataSource(("D:\\Program Files\\Weka-3-8\\data\\iris.2D.arff"));
+        DataSource source = new DataSource(("D:\\Program Files\\Weka-3-8\\data\\ionosphere.arff"));
         Instances train = source.getDataSet();
         train.setClassIndex(train.numAttributes() - 1);
         NaiveBayes tb = new NaiveBayes();
-        train = tb.filter(train);
-            // setup filter
-         Filter f = new Discretize();
-         f.setInputFormat(train);
          Evaluation eval = new Evaluation(train);
          // apply filter
-        train = Filter.useFilter(train, f);
         switch(pil) {
             case 1 : 
                 tb.buildClassifier(train);
-                //tb.toSummaryString();
+                tb.toSummaryString();
                 eval.crossValidateModel(tb, train ,10, new Random(1));
                 System.out.println(eval.toSummaryString());
-                saveModel(tb);
                 break;
             default :
                 tb = loadModel();
-                train = tb.filter(train);
-                 f.setInputFormat(train);
-                train = Filter.useFilter(train, f);
-
-                train.setClassIndex(train.numAttributes() - 1);
-                tb.buildClassifier(train);
-                //tb.toSummaryString();
+                
                 eval.crossValidateModel(tb, train ,10, new Random(1));
                 System.out.println(eval.toSummaryString());
         }
@@ -114,6 +104,8 @@ public class NaiveBayes extends AbstractClassifier{
     @Override
     public void buildClassifier(Instances i) throws Exception {
         datatrain = i;
+        numEachClass = getNumEachClass(datatrain);
+        listAtribut.clear();
         for (int j = 0; j < datatrain.numAttributes()-1; j++) {
             listAtribut.add(new Atribut(datatrain, j, i.classIndex()));
         }
@@ -122,23 +114,28 @@ public class NaiveBayes extends AbstractClassifier{
     @Override
     public double classifyInstance(Instance last) {
         double prob[] = new double[last.classAttribute().numValues()];
-        int [] countEachClass = getNumEachClass();
-        int idx = 0;
-        for (int classIndex = 0; classIndex < last.attribute(last.numAttributes() - 1).numValues(); classIndex ++ ) {
+        //System.out.println(Arrays.toString(getNumEachClass()));
+//        System.out.println(last);
+        for (int classIndex = 0; classIndex < last.attribute(last.numAttributes() - 1).numValues(); classIndex ++ ) {//classifikasi
+            //dengan cara mencari probabilitas perkelas
+            //System.out.print(last.attribute(last.classIndex()).value(classIndex)+" ");
             double temp = 1;
-            //System.out.println(last.classAttribute().value(classIndex));
-            for (int i=0; i < last.numAttributes()-1; i++) {
+            int i = 0;
                 for (Atribut attr : getList()) {
-                    temp = temp * attr.getFrekuensiNilai(last.toString(i), 
-                            last.attribute(last.numAttributes() - 1).value(classIndex))/countEachClass[idx];
+//                    System.out.print(attr.getFrekuensiNilai(last.attribute(i).name(), 
+//                        last.attribute(last.classIndex()).value(classIndex), 
+//                        last.value(i))+" ");
+                    temp *= attr.getFrekuensiNilai(last.attribute(i).name(), 
+                        last.attribute(last.classIndex()).value(classIndex), 
+                        last.value(i))/numEachClass[classIndex];
+                    i++;
                 }
-                
-            }
+//            System.out.println();
             double res;
-            res = countEachClass[idx]/last.numAttributes() * temp;
+            res = numEachClass[classIndex]/last.numAttributes() * temp;
             prob[classIndex] = res;
-            idx++;
         }
+        //System.out.println(Arrays.toString(prob));
         return maxIndex(prob);
     }
     
@@ -168,14 +165,15 @@ public class NaiveBayes extends AbstractClassifier{
         }
     }
     
-    private int[] getNumEachClass() {
-        int [] countEachClass = new int[datatrain.numAttributes()];
-        for (int i=0; i < datatrain.numAttributes()-1; i++) {
-            for (Atribut attr : getList()) {
-                for (Nilai val : attr.getListAtribut()) {
-                    countEachClass[i] = (int)val.getNumClass();
-                }
+    public static int[] getNumEachClass(Instances ins) {
+        int [] countEachClass = new int[ins.numClasses()];
+        for (int i=0; i < ins.numClasses(); i++) {
+            int cnt=0;
+            for(int j = 0; j<ins.numInstances();j++) {
+                if (ins.attribute(ins.classIndex()).value(i).equals
+                    (ins.get(j).toString(ins.classIndex()))) cnt++;
             }
+            countEachClass[i] = cnt;
         }
         return countEachClass;
     }
