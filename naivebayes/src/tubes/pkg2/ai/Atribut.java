@@ -19,15 +19,25 @@ public class Atribut implements Serializable {
     private final String name;
     private final ArrayList<Nilai> listNilai;
     public Atribut(Instances ints, int i, int classindex) throws Exception {
-        Instances newData = new Instances(ints);
-        Discretize f = new Discretize();
-        f.setInputFormat(newData);
-        newData = Filter.useFilter(newData, f);
-        name = ints.attribute(i).name();
-        listNilai = new ArrayList<>();
-        for (int j = 0; j < newData.attribute(i).numValues(); j++) {
-            listNilai.add(new Nilai(ints, i, j, classindex));
+        if (ints.attribute(i).isNumeric()) {
+            Instances newData = new Instances(ints);
+            Discretize f = new Discretize();
+            f.setInputFormat(newData);
+            newData = Filter.useFilter(newData, f);
+            name = ints.attribute(i).name();listNilai = new ArrayList<>();
+            for (int j = 0; j < newData.attribute(i).numValues(); j++) {
+                listNilai.add(new Nilai(ints, i, j, classindex));
+            }
         }
+        else {
+            name = ints.attribute(i).name().replaceAll("\\s+", "");
+//            System.out.println(name);
+            listNilai = new ArrayList<>();
+            for (int j = 0; j < ints.attribute(i).numValues(); j++) {
+                listNilai.add(new Nilai(ints, i, j, classindex));
+            }
+        }
+        
     }
     
     
@@ -39,13 +49,23 @@ public class Atribut implements Serializable {
         return listNilai;
     }
    
-    public double getFrekuensiNilai(String nama, String className, double val) {
+    public double getFrekuensiNilai(String className, String valStr, double val, boolean isNumeric) {
+        //System.out.println(nama);
         for (Nilai valNilai : listNilai) {
-            if (nama.equalsIgnoreCase(name)) {
+//                System.out.println(valNilai.getName());
+            //System.out.println(listNilai.size());
+        //System.out.println(name.replaceAll("\\s+", "")+ "="+nama.replaceAll("\\s+", ""));
+            if (isNumeric) {
                 if (val >= valNilai.getLower() && val < valNilai.getUpper()){
                     return valNilai.getFrekuensiNilai(className);
                 }
             }
+            else {
+//                System.out.println(valStr+"="+valNilai.getName());
+                if (valNilai.getName().replaceAll("\\s", "").equalsIgnoreCase(valStr.replaceAll("\\s", "")))
+                    return valNilai.getFrekuensiNilai(className);
+            } 
+
         }
         return 1;
     }
