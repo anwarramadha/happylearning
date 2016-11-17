@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
 import weka.classifiers.AbstractClassifier;
@@ -21,7 +20,6 @@ import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
-import weka.filters.unsupervised.attribute.Normalize;
 import weka.filters.unsupervised.attribute.NumericToNominal;
 /**
  *
@@ -93,10 +91,10 @@ public class NaiveBayes extends AbstractClassifier{
         switch(pil) {
             case 1 : 
                 tb.buildClassifier(train);
-                tb.toSummaryString();
+                //tb.toSummaryString();
                 eval.evaluateModel(tb, train);
                 //eval.crossValidateModel(tb, train ,10, new Random(1));
-                System.out.println(eval.toSummaryString());
+                System.out.println(eval.toSummaryString(true));
                 System.out.println(eval.toMatrixString());
                 //saveModel(tb);
                 break;
@@ -105,7 +103,7 @@ public class NaiveBayes extends AbstractClassifier{
                 tb.toSummaryString();
                 eval.crossValidateModel(tb, train ,10, new Random(1));
                 System.out.println(eval.toSummaryString());
-                System.out.println(eval.toMatrixString());
+//                System.out.println(eval.toMatrixString());
         }
     }
 

@@ -28,6 +28,7 @@ public class Nilai implements Serializable {
         lower = 0;
         upper = 0;
         kelas = new ArrayList<>();
+        //if(newData.instance(i).isMissing(j)) newData.instance(i).setValue(i, "b");
         if (newData.attribute(i).isNumeric()) {
             Discretize f = new Discretize();
             f.setInputFormat(newData);
