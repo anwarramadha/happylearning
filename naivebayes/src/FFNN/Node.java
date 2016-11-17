@@ -46,13 +46,17 @@ public class Node {
         return weight.get(index);
     }
     
+    public int getWeightSize() {
+        return weight.size();
+    }
+    
     
     public double output(ArrayList<Double> listInput) {
         double sigma = 0;
+        System.out.println("size"+weight.size());
         for (int ih = 0; ih< weight.size(); ih++)  {
             sigma+= weight.get(ih)*listInput.get(ih);
-        }
-        
+        }        
         return sigmoid (sigma); 
     }
     
@@ -60,4 +64,5 @@ public class Node {
     private double sigmoid(double input) {
         return 1/(1+Math.pow(Math.E,input*(-1)));
     }
+    
 }
