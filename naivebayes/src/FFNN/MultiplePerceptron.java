@@ -44,47 +44,38 @@ public class MultiplePerceptron extends AbstractClassifier {
     @Override 
     public void buildClassifier(Instances i){
         //iterasi
-        for (int indexInstance = 0; indexInstance < i.numInstances();indexInstance++) {
-            ArrayList<Double> listInput = new ArrayList<>();
-            
-            //mengisi nilai listInput dengan nilai di instances
-            for (int index = 0 ; index < i.numAttributes();index++)
-                listInput.add(i.get(indexInstance).value(index));
-            
-            ArrayList<Double> listOutputHidden = new ArrayList<>();
-            
-            //menghitung output hidden layer
-            for (int index = 0; index < listNodeHidden.size();index++) {
-                double value = listNodeHidden.get(index).output(listInput);
-                listOutputHidden.add(value);
-                listNodeHidden.get(index).setValue(value);
-                System.out.println("Hidden layer outpunt" + value);
-            }
-            
-            
-            ArrayList<Double> listOutputOutput = new ArrayList<>();
-            
-            //menghitung output output layer
-            for (int index = 0; index < listNodeOutput.size();index++) {
-                double value = listNodeOutput.get(index).output(listOutputHidden);
-                listOutputOutput.add(value);   
-                listNodeOutput.get(index).setValue(value);
-            }
-            
-            calculateError(i.instance(indexInstance));
-            
-            updateBobot(i.instance(indexInstance));
-            
-            
-            
-            
-            
-            
-            
-        }
-        
-        
+        for (int itt = 0;itt<itteration;itt++) {
+            for (int indexInstance = 0; indexInstance < i.numInstances();indexInstance++) {
+                ArrayList<Double> listInput = new ArrayList<>();
 
+                //mengisi nilai listInput dengan nilai di instances
+                for (int index = 0 ; index < i.numAttributes();index++)
+                    listInput.add(i.get(indexInstance).value(index));
+
+                ArrayList<Double> listOutputHidden = new ArrayList<>();
+
+                //menghitung output hidden layer
+                for (int index = 0; index < listNodeHidden.size();index++) {
+                    double value = listNodeHidden.get(index).output(listInput);
+                    listOutputHidden.add(value);
+                    listNodeHidden.get(index).setValue(value);
+                }
+
+
+                ArrayList<Double> listOutputOutput = new ArrayList<>();
+
+                //menghitung output output layer
+                for (int index = 0; index < listNodeOutput.size();index++) {
+                    double value = listNodeOutput.get(index).output(listOutputHidden);
+                    listOutputOutput.add(value);   
+                    listNodeOutput.get(index).setValue(value);
+                }
+
+                calculateError(i.instance(indexInstance));
+
+                updateBobot(i.instance(indexInstance));
+            }
+        }
     }
     
     public void updateBobot(Instance i) {
@@ -140,7 +131,6 @@ public class MultiplePerceptron extends AbstractClassifier {
                 sigma += listNodeOutput.get(index).getWeightFromList(indexDalem)*listNodeOutput.get(index).getError();
             
             errorVal *= sigma;
-            
             listNodeHidden.get(index).setError(errorVal);
         }
         
@@ -167,14 +157,14 @@ public class MultiplePerceptron extends AbstractClassifier {
         
         System.out.print("Masukkan nama file : ");
         String filename = input.next();
-        ConverterUtils.DataSource source = new ConverterUtils.DataSource(("C:\\Program Files\\Weka-3-8\\data\\"+filename));
+        ConverterUtils.DataSource source = new ConverterUtils.DataSource(("D:\\Program Files\\Weka-3-8\\data\\"+filename));
         Instances train = source.getDataSet();
         for (int i=0; i < train.numAttributes();i++)
             System.out.println(i+". "+train.attribute(i).name());
         System.out.print("Masukkan indeks kelas : ");
         int classIdx = input.nextInt();
         train.setClassIndex(classIdx);
-        MultiplePerceptron mlp = new MultiplePerceptron(1, rate , layer, train);
+        MultiplePerceptron mlp = new MultiplePerceptron(100, rate , layer, train);
         mlp.buildClassifier(train);
     }
 }

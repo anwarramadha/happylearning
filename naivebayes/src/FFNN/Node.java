@@ -53,8 +53,7 @@ public class Node {
     
     public double output(ArrayList<Double> listInput) {
         double sigma = 0;
-        System.out.println("size"+weight.size());
-        for (int ih = 0; ih< weight.size(); ih++)  {
+        for (int ih = 0; ih< listInput.size(); ih++)  {
             sigma+= weight.get(ih)*listInput.get(ih);
         }        
         return sigmoid (sigma); 
