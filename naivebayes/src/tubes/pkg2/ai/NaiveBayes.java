@@ -91,7 +91,7 @@ public class NaiveBayes extends AbstractClassifier{
         switch(pil) {
             case 1 : 
                 tb.buildClassifier(train);
-                //tb.toSummaryString();
+                tb.toSummaryString();
                 eval.evaluateModel(tb, train);
                 //eval.crossValidateModel(tb, train ,10, new Random(1));
                 System.out.println(eval.toSummaryString(true));

@@ -17,8 +17,9 @@ public class Node {
     ArrayList<Double> weight;
     
     public Node (int numWeight) {
+        value = 1;
         weight = new ArrayList<>(numWeight);
-        for (int num=0;num<numWeight;num++) weight.add(0.0);
+        for (int num=0;num<numWeight+1;num++) weight.add(0.0);
     }
     
     public void setValue(double val) {
@@ -38,7 +39,8 @@ public class Node {
     }
     
     public void setWeight(int index, double w) {
-        weight.add(w);
+//        weight.add(w);
+        //System.out.println(index);
         weight.set(index, w);
     }
     
@@ -46,6 +48,9 @@ public class Node {
         return weight.get(index);
     }
     
+    public ArrayList<Double> getWeight() {
+        return weight;
+    }
     public int getWeightSize() {
         return weight.size();
     }
@@ -53,8 +58,8 @@ public class Node {
     
     public double output(ArrayList<Double> listInput) {
         double sigma = 0;
-        for (int ih = 0; ih< listInput.size(); ih++)  {
-            sigma+= weight.get(ih)*listInput.get(ih);
+        for (int ih = 0; ih < listInput.size(); ih++)  {
+            sigma+= weight.get(ih)*listInput.get(ih);//input value = 1, value
         }        
         return sigmoid (sigma); 
     }

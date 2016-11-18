@@ -6,8 +6,8 @@
 package FFNN;
 
 import java.util.ArrayList;
-import java.util.Scanner;
 import weka.classifiers.AbstractClassifier;
+import weka.classifiers.Evaluation;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils;
@@ -23,14 +23,15 @@ public class MultiplePerceptron extends AbstractClassifier {
     double learningRate;
     int numHiddenLayer;
     ArrayList<Integer> target;
-    
+    double [] instancesToDouble;
     public MultiplePerceptron(int itt, double learn, int numHLayer, Instances i) {
         listNodeHidden = new ArrayList<>();//inisialisasis listNodeHidden
         listNodeOutput = new ArrayList<>();
         itteration = itt;
         learningRate = learn;
         numHiddenLayer = numHLayer;
-        for (int hiddenLayer=0; hiddenLayer<numHiddenLayer; hiddenLayer++) {//buat neuron untuk hidden layer
+        for (int hiddenLayer=0; hiddenLayer<numHiddenLayer+1; hiddenLayer++) {//buat neuron untuk hidden layer
+            //ditambah 1 untuk neuron bias
             listNodeHidden.add(new Node(i.numAttributes()));
             
         }
@@ -39,39 +40,45 @@ public class MultiplePerceptron extends AbstractClassifier {
             listNodeOutput.add(new Node(numHiddenLayer));
         }
         target = new ArrayList<>();
+        instancesToDouble = new double[i.numInstances()];
+        for (int numIns=0; numIns<i.numInstances();numIns++) {
+            instancesToDouble[numIns] = i.instance(numIns).toDoubleArray()[i.classIndex()];
+        }
     }
     
     @Override 
     public void buildClassifier(Instances i){
         //iterasi
         for (int itt = 0;itt<itteration;itt++) {
+//            System.out.println("Iterasi ke "+ itt);
             for (int indexInstance = 0; indexInstance < i.numInstances();indexInstance++) {
                 ArrayList<Double> listInput = new ArrayList<>();
 
                 //mengisi nilai listInput dengan nilai di instances
-                for (int index = 0 ; index < i.numAttributes();index++)
+                listInput.add(1.0);//ini bias input
+                for (int index = 0 ; index < i.numAttributes()-1;index++)
                     listInput.add(i.get(indexInstance).value(index));
 
                 ArrayList<Double> listOutputHidden = new ArrayList<>();
 
                 //menghitung output hidden layer
-                for (int index = 0; index < listNodeHidden.size();index++) {
+                for (int index = 0; index < listNodeHidden.size();index++) {//output bias tidak boleh ganti
                     double value = listNodeHidden.get(index).output(listInput);
                     listOutputHidden.add(value);
-                    listNodeHidden.get(index).setValue(value);
+                    if (index!=0)
+                        listNodeHidden.get(index).setValue(value);
                 }
 
-
-                ArrayList<Double> listOutputOutput = new ArrayList<>();
 
                 //menghitung output output layer
                 for (int index = 0; index < listNodeOutput.size();index++) {
-                    double value = listNodeOutput.get(index).output(listOutputHidden);
-                    listOutputOutput.add(value);   
+                    double value = listNodeOutput.get(index).output(listOutputHidden); 
+//                    System.out.println(value);
                     listNodeOutput.get(index).setValue(value);
+                    
                 }
-
-                calculateError(i.instance(indexInstance));
+                
+                calculateError(i.instance(indexInstance), indexInstance);
 
                 updateBobot(i.instance(indexInstance));
             }
@@ -83,7 +90,8 @@ public class MultiplePerceptron extends AbstractClassifier {
         ArrayList<Double> listInput = new ArrayList<>(); 
         
         //mengisi nilai listInput dengan nilai di instances
-        for (int index = 0 ; index < i.numAttributes();index++)
+        listInput.add(1.0);
+        for (int index = 0 ; index < i.numAttributes()-1;index++)
             listInput.add(i.value(index));
         
         //bobot hidden
@@ -98,7 +106,7 @@ public class MultiplePerceptron extends AbstractClassifier {
         //bobot output
         for (int index = 0; index < listNodeOutput.size();index++) {
             for (int indexDalem = 0 ; indexDalem < listNodeHidden.size();indexDalem++) {
-                double delta = learningRate*listNodeOutput.get(0).getError()*listNodeHidden.get(0).getValue();
+                double delta = learningRate*listNodeOutput.get(index).getError()*listNodeHidden.get(indexDalem).getValue();
                 double newWeight = delta + listNodeOutput.get(index).getWeightFromList(indexDalem);
                 listNodeOutput.get(index).setWeight(indexDalem, newWeight);
             }
@@ -107,29 +115,28 @@ public class MultiplePerceptron extends AbstractClassifier {
         
     }
     
-    public void calculateError(Instance i) {
+    public void calculateError(Instance i, int insIdx) {
         
         i.attribute(i.classIndex());
-        
-        //ceritanya ngisi target (BELUM BERES)
-        for (int index = 0; index < i.numClasses() ; index++)
-            target.add(1);
-        
-        //set error layer output
         for (int index = 0 ; index < listNodeOutput.size() ; index++) {
             double outputVal = listNodeOutput.get(index).getValue();
-            double errorVal = outputVal*(1-outputVal)*(target.get(index)-outputVal);
+            //System.out.println("real "+outputVal+"expect "+realVal);
+            double errorVal;
+            if ((double)index == getTargetValue(insIdx))//cek jika index == target, maka nilai target = 1, else 0
+                errorVal=outputVal*(1-outputVal)*(1-outputVal);
+            else errorVal=outputVal*(1-outputVal)*(0-outputVal); //nilai target = 0
             listNodeOutput.get(index).setError(errorVal);
+//            System.out.printf("%.3f %.3f ", outputVal, errorVal);
         }
-        
+//        System.out.println();
         //set error layer hidden
         for (int index = 0; index < listNodeHidden.size(); index++) {
             double outputVal = listNodeHidden.get(index).getValue();
             double errorVal = outputVal*(1-outputVal);
             double sigma = 0;
-            for (int indexDalem = 0 ; indexDalem < listNodeOutput.get(index).getWeightSize(); indexDalem++)
-                sigma += listNodeOutput.get(index).getWeightFromList(indexDalem)*listNodeOutput.get(index).getError();
-            
+            for (int indexDalem = 0; indexDalem < listNodeOutput.size();indexDalem++){
+                sigma += listNodeOutput.get(indexDalem).getWeightFromList(index) * listNodeOutput.get(indexDalem).getError();
+            }
             errorVal *= sigma;
             listNodeHidden.get(index).setError(errorVal);
         }
@@ -137,34 +144,80 @@ public class MultiplePerceptron extends AbstractClassifier {
         //beres
     }
     
+    private double getTargetValue(int index) {
+        return instancesToDouble[index];
+    }
     
+    private double maxValue(ArrayList<Node> in) {
+        double result=0, max=in.get(0).getValue();
+        for (int idx = 0; idx<in.size();idx++) {
+            if (max<in.get(idx).getValue()) {
+                max = in.get(idx).getValue();
+                result=(double)idx;
+            }
+        }
+//        System.out.println(result);
+        return result;
+    }
     
     @Override 
     public double classifyInstance(Instance i) {
-        return 0;
+        ArrayList<Double> listInput = new ArrayList<>();
+
+        //mengisi nilai listInput dengan nilai di instances
+        listInput.add(1.0);
+        for (int index = 0 ; index < i.numAttributes()-1;index++)
+            listInput.add(i.value(index));
+
+        ArrayList<Double> listOutputHidden = new ArrayList<>();
+
+        //menghitung output hidden layer
+        for (int index = 0; index < listNodeHidden.size();index++) {//dari 1 karena node 0 ada bias
+            double value = listNodeHidden.get(index).output(listInput);
+            listOutputHidden.add(value);
+            if (index!=0)
+                listNodeHidden.get(index).setValue(value);
+        }
+
+
+        //menghitung output output layer
+        for (int index = 0; index < listNodeOutput.size();index++) {
+            double value = listNodeOutput.get(index).output(listOutputHidden); 
+            listNodeOutput.get(index).setValue(value);
+
+        }
+        
+        return maxValue(listNodeOutput);
     }
     
     public static void main(String args[]) throws Exception{
-        System.out.println("input jumlah layer 0/1 :");
-        Scanner input = new Scanner(System.in);
-        int layer = input.nextInt();
-        System.out.println("input learning rate");
-        double rate = input.nextDouble();
-        if(layer==1){
-            System.out.println("input jumlah neuron di hidden layer");
-            int hidden = input.nextInt();
-        }
-        
-        System.out.print("Masukkan nama file : ");
-        String filename = input.next();
-        ConverterUtils.DataSource source = new ConverterUtils.DataSource(("D:\\Program Files\\Weka-3-8\\data\\"+filename));
+//        System.out.println("input jumlah layer 0/1 :");
+//        Scanner input = new Scanner(System.in);
+//        int layer = input.nextInt();
+//        System.out.println("input learning rate");
+//        double rate = input.nextDouble();
+//        int hidden = 0;
+//        if(layer==1){
+//            System.out.println("input jumlah neuron di hidden layer");
+//            hidden = input.nextInt();
+//        }
+//        
+//        System.out.print("Masukkan nama file : ");
+//        String filename = input.next();
+        ConverterUtils.DataSource source = new ConverterUtils.DataSource(("D:\\Program Files\\Weka-3-8\\data\\iris.arff"));
         Instances train = source.getDataSet();
+//        Normalize nm = new Normalize();
+//        nm.setInputFormat(train);
+//        train = Filter.useFilter(train, nm);
         for (int i=0; i < train.numAttributes();i++)
             System.out.println(i+". "+train.attribute(i).name());
         System.out.print("Masukkan indeks kelas : ");
-        int classIdx = input.nextInt();
-        train.setClassIndex(classIdx);
-        MultiplePerceptron mlp = new MultiplePerceptron(100, rate , layer, train);
+        //int classIdx = input.nextInt();
+        train.setClassIndex(train.numAttributes()-1);
+        MultiplePerceptron mlp = new MultiplePerceptron(10000, 0.005 , 50, train);
         mlp.buildClassifier(train);
+        Evaluation eval = new Evaluation(train);
+        eval.evaluateModel(mlp, train);
+        System.out.println(eval.toSummaryString());
     }
 }
