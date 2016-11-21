@@ -5,21 +5,24 @@
  */
 package FFNN;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  *
  * @author Mujahid Suriah
  */
-public class Node {
+public class Node implements Serializable{
     double value;
     double error;
     ArrayList<Double> weight;
     
     public Node (int numWeight) {
-        value = 1;
+        value = 0;
+        error = 0;
         weight = new ArrayList<>(numWeight);
-        for (int num=0;num<numWeight+1;num++) weight.add(0.0);
+        for (int num=0;num<numWeight;num++) weight.add(0.0);
     }
     
     public void setValue(double val) {
@@ -39,8 +42,6 @@ public class Node {
     }
     
     public void setWeight(int index, double w) {
-//        weight.add(w);
-        //System.out.println(index);
         weight.set(index, w);
     }
     
@@ -58,8 +59,9 @@ public class Node {
     
     public double output(ArrayList<Double> listInput) {
         double sigma = 0;
-        for (int ih = 0; ih < listInput.size(); ih++)  {
-            sigma+= weight.get(ih)*listInput.get(ih);//input value = 1, value
+        for (int ih = 0; ih < weight.size(); ih++)  {
+//            System.out.println(weight.get(ih)+"*"+listInput.get(ih));
+            sigma += weight.get(ih)*listInput.get(ih);//input value = 1, value
         }        
         return sigmoid (sigma); 
     }

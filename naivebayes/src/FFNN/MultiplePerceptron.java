@@ -11,6 +11,8 @@ import weka.classifiers.Evaluation;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils;
+import weka.filters.Filter;
+import weka.filters.unsupervised.attribute.Normalize;
 
 /**
  *
@@ -37,7 +39,7 @@ public class MultiplePerceptron extends AbstractClassifier {
         }
         
         for (int numInstance = 0; numInstance<i.numClasses(); numInstance++) {//buat neuron untuk output
-            listNodeOutput.add(new Node(numHiddenLayer));
+            listNodeOutput.add(new Node(listNodeHidden.size()));
         }
         target = new ArrayList<>();
         instancesToDouble = new double[i.numInstances()];
@@ -58,31 +60,49 @@ public class MultiplePerceptron extends AbstractClassifier {
                 listInput.add(1.0);//ini bias input
                 for (int index = 0 ; index < i.numAttributes()-1;index++)
                     listInput.add(i.get(indexInstance).value(index));
-
+                
                 ArrayList<Double> listOutputHidden = new ArrayList<>();
-
+                listOutputHidden.add(1.0);//input bias
+//                System.out.println();
+//                System.out.println("Hidden layer");
+                listNodeHidden.get(0).setValue(1.0);//bias gak boleh ganti output
                 //menghitung output hidden layer
-                for (int index = 0; index < listNodeHidden.size();index++) {//output bias tidak boleh ganti
+                for (int index = 1; index < listNodeHidden.size();index++) {//output bias tidak boleh ganti
                     double value = listNodeHidden.get(index).output(listInput);
+                    listNodeHidden.get(index).setValue(value);
                     listOutputHidden.add(value);
-                    if (index!=0)
-                        listNodeHidden.get(index).setValue(value);
+//                    System.out.println("neuron "+index+" "+value);
                 }
 
-
+//                System.out.println();
+//                System.out.println("Output layer");
                 //menghitung output output layer
                 for (int index = 0; index < listNodeOutput.size();index++) {
-                    double value = listNodeOutput.get(index).output(listOutputHidden); 
-//                    System.out.println(value);
+                    double value = listNodeOutput.get(index).output(listOutputHidden);
                     listNodeOutput.get(index).setValue(value);
+//                    System.out.print(value+" ");
                     
                 }
-                
-                calculateError(i.instance(indexInstance), indexInstance);
+            
+//            System.out.println(listNodeHidden.get(1).getWeightFromList(0));   
+                calculateError(indexInstance);
 
                 updateBobot(i.instance(indexInstance));
             }
         }
+        for (int idx=0;idx<listNodeHidden.size();idx++) {
+                System.out.println("Hidden value "+listNodeHidden.get(idx).getValue());
+                System.out.println("Hidden error "+listNodeHidden.get(idx).getError());
+                for (int idx2=0; idx2<listNodeHidden.get(idx).getWeightSize();idx2++)
+                    System.out.println("Hidden weight"+listNodeHidden.get(idx).getWeightFromList(idx2));
+            }
+            System.out.println();
+            for (int idx=0;idx<listNodeOutput.size();idx++) {
+                System.out.println("Output value "+listNodeOutput.get(idx).getValue());
+                System.out.println("Output error "+listNodeOutput.get(idx).getError());
+                for (int idx2=0; idx2<listNodeOutput.get(idx).getWeightSize();idx2++)
+                    System.out.println("Output weight"+listNodeOutput.get(idx).getWeightFromList(idx2));
+            }
     }
     
     public void updateBobot(Instance i) {
@@ -96,10 +116,11 @@ public class MultiplePerceptron extends AbstractClassifier {
         
         //bobot hidden
         for (int index = 0; index < listNodeHidden.size();index++) {
-            for (int indexDalem = 0 ; indexDalem < listInput.size();indexDalem++) {
+            for (int indexDalem = 0 ; indexDalem < listNodeHidden.get(index).getWeightSize();indexDalem++) {
                 double delta = learningRate*listNodeHidden.get(index).getError()*listInput.get(indexDalem);
                 double newWeight = delta + listNodeHidden.get(index).getWeightFromList(indexDalem);
                 listNodeHidden.get(index).setWeight(indexDalem, newWeight);
+//                System.out.println(index+" "+indexDalem+" "+newWeight);
             }
         }
         
@@ -115,18 +136,29 @@ public class MultiplePerceptron extends AbstractClassifier {
         
     }
     
-    public void calculateError(Instance i, int insIdx) {
+    public void calculateError(int insIdx) {
         
-        i.attribute(i.classIndex());
-        for (int index = 0 ; index < listNodeOutput.size() ; index++) {
+        double result = maxValue(listNodeOutput);
+//        System.out.println(result);
+        //Error di output layer
+        boolean same=false;
+//        System.out.print("reult "+result+" ");
+        for (int index = 0; index < listNodeOutput.size() ; index++) {
             double outputVal = listNodeOutput.get(index).getValue();
             //System.out.println("real "+outputVal+"expect "+realVal);
             double errorVal;
-            if ((double)index == getTargetValue(insIdx))//cek jika index == target, maka nilai target = 1, else 0
+            if (result == getTargetValue(insIdx) && !same){//cek jika index == target, maka nilai target = 1, else 0
                 errorVal=outputVal*(1-outputVal)*(1-outputVal);
-            else errorVal=outputVal*(1-outputVal)*(0-outputVal); //nilai target = 0
+                System.out.println(result);
+                same = true;
+//            System.out.print("sesuai target ");
+            }
+            else {
+                errorVal=outputVal*(1-outputVal)*(0-outputVal);
+//                System.out.print("Tida seusai target ");
+            } //nilai target = 0
             listNodeOutput.get(index).setError(errorVal);
-//            System.out.printf("%.3f %.3f ", outputVal, errorVal);
+//            System.out.printf("%f %f ", outputVal, errorVal);
         }
 //        System.out.println();
         //set error layer hidden
@@ -155,8 +187,10 @@ public class MultiplePerceptron extends AbstractClassifier {
                 max = in.get(idx).getValue();
                 result=(double)idx;
             }
+//            System.out.print(in.get(idx).getValue()+" ");
         }
-//        System.out.println(result);
+//        System.out.println()
+;//        System.out.println(result);
         return result;
     }
     
@@ -170,13 +204,13 @@ public class MultiplePerceptron extends AbstractClassifier {
             listInput.add(i.value(index));
 
         ArrayList<Double> listOutputHidden = new ArrayList<>();
-
+        listNodeHidden.get(0).setValue(1.0);
+        listOutputHidden.add(1.0);
         //menghitung output hidden layer
-        for (int index = 0; index < listNodeHidden.size();index++) {//dari 1 karena node 0 ada bias
+        for (int index = 1; index < listNodeHidden.size();index++) {//dari 1 karena node 0 ada bias
             double value = listNodeHidden.get(index).output(listInput);
+//            listNodeHidden.get(index).setValue(value);
             listOutputHidden.add(value);
-            if (index!=0)
-                listNodeHidden.get(index).setValue(value);
         }
 
 
@@ -214,10 +248,11 @@ public class MultiplePerceptron extends AbstractClassifier {
         System.out.print("Masukkan indeks kelas : ");
         //int classIdx = input.nextInt();
         train.setClassIndex(train.numAttributes()-1);
-        MultiplePerceptron mlp = new MultiplePerceptron(10000, 0.005 , 50, train);
-        mlp.buildClassifier(train);
-        Evaluation eval = new Evaluation(train);
-        eval.evaluateModel(mlp, train);
-        System.out.println(eval.toSummaryString());
+                MultiplePerceptron mlp = new MultiplePerceptron(10000, 1, 13, train);
+                mlp.buildClassifier(train);
+                Evaluation eval = new Evaluation(train);
+                eval.evaluateModel(mlp, train);
+                System.out.println(eval.toSummaryString());
+//        System.out.println(eval.toMatrixString());
     }
 }
